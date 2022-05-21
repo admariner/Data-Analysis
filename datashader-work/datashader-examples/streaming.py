@@ -49,10 +49,8 @@ def update_data():
     hr = group[0]
     end_mins = ((group[1] + 1) % num_minute_groups) * time_period
     end_hr = hr if end_mins > 0 else (hr + 1) % 24
-    time_text.text = 'Time Period: {}:{} - {}:{}'.format(str(hr).zfill(2),
-                                                         str(mins).zfill(2),
-                                                         str(end_hr).zfill(2),
-                                                         str(end_mins).zfill(2))
+    time_text.text = f'Time Period: {str(hr).zfill(2)}:{str(mins).zfill(2)} - {str(end_hr).zfill(2)}:{str(end_mins).zfill(2)}'
+
     counter += 1
 
 def update_image(dataframe):
@@ -77,12 +75,13 @@ def update_image(dataframe):
 
     img = tf.shade(agg, cmap=BuGn9, how='log')
 
-    new_data = {}
-    new_data['image'] = [img.data]
-    new_data['x'] = [x_range[0]]
-    new_data['y'] = [y_range[0]]
-    new_data['dh'] = [y_range[1] - y_range[0]]
-    new_data['dw'] = [x_range[1] - x_range[0]]
+    new_data = {
+        'image': [img.data],
+        'x': [x_range[0]],
+        'y': [y_range[0]],
+        'dh': [y_range[1] - y_range[0]],
+        'dw': [x_range[1] - x_range[0]],
+    }
 
     image_source.stream(new_data, 1)
 

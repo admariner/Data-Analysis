@@ -12,16 +12,6 @@ def process_bargraph(bargraph):
     ]
     print(len(bardata))
     return
-    # Sort by xposition
-    bardata = sorted(bardata, key=lambda x: float(x.get("x")))
-    views = [float(s.split(" ")[0].replace(",", "")) for s in bardata]
-    dates = [
-        s.split(" ")[-1].split("\xa0")[0] + " " + s.split(" ")[-1].split("\xa0")[1]
-        for s in bardata
-    ]
-    year = str((datetime.now() - pd.Timedelta(days=i * 30)).year)
-    dates = [parser.parse(d + " " + year) for d in dates]
-    return views, dates
 
 
 files = os.listdir("html_pages")

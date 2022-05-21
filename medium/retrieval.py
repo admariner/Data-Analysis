@@ -49,13 +49,13 @@ def process_entry(entry, parallel=True, tz="America/Chicago"):
     if parallel:
         entry = BeautifulSoup(entry, features="lxml").body.tr
 
-    entry_dict = {}
-    # Extract information
-    for value, key in zip(
-        entry.find_all(attrs={"class": "sortableTable-value"}),
-        ["published_date", "views", "reads", "ratio", "fans"],
-    ):
-        entry_dict[key] = float(value.text) if key == "ratio" else int(value.text)
+    entry_dict = {
+        key: float(value.text) if key == "ratio" else int(value.text)
+        for value, key in zip(
+            entry.find_all(attrs={"class": "sortableTable-value"}),
+            ["published_date", "views", "reads", "ratio", "fans"],
+        )
+    }
 
     entry_dict["read_time"] = int(
         entry.find_all(attrs={"class": "readingTime"})[0].get("title").split(" ")[0]

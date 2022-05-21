@@ -62,7 +62,7 @@ def create_time_features(
 
     if include_additional:
         # Additional attributes to extract
-        attr = attr + [
+        attr += [
             "is_month_end",
             "is_month_start",
             "is_quarter_end",
@@ -72,44 +72,55 @@ def create_time_features(
             "days_in_month",
         ]
 
+
     # iterate through each attribute and add it to the dataframe
     for n in attr:
         df[prefix + n] = getattr(fld.dt, n)
 
     # Add fractional time of day converting to hours
-    df[prefix + "fracday"] = (
-        df[prefix + "hour"]
-        + df[prefix + "minute"] / 60
-        + df[prefix + "second"] / 60 / 60
+    df[f"{prefix}fracday"] = (
+        (
+            (df[f"{prefix}hour"] + df[f"{prefix}minute"] / 60)
+            + df[f"{prefix}second"] / 60 / 60
+        )
     ) / 24
 
+
     # Add fractional time of week
-    df[prefix + "fracweek"] = (df[prefix + "dayofweek"] + df[prefix + "fracday"]) / 7
+    df[f"{prefix}fracweek"] = (
+        df[f"{prefix}dayofweek"] + df[f"{prefix}fracday"]
+    ) / 7
+
 
     # Add fractional time of month
-    df[prefix + "fracmonth"] = ((df[prefix + "day"] - 1) + df[prefix + "fracday"]) / (
-        fld.dt.days_in_month
-    )  # Use fld days_in_month in case this is not
+    df[f"{prefix}fracmonth"] = (
+        df[f"{prefix}day"] - 1 + df[f"{prefix}fracday"]
+    ) / fld.dt.days_in_month
+
     # one of the attributes specified
 
     # Calculate days in year (accounting for leap year rules)
     days_in_year = np.where(
-        (df[prefix + "year"] % 4 == 0)
-        & ((df[prefix + "year"] % 100 != 0) | (df[prefix + "year"] % 400 == 0)),
+        (df[f"{prefix}year"] % 4 == 0)
+        & (
+            (df[f"{prefix}year"] % 100 != 0) | (df[f"{prefix}year"] % 400 == 0)
+        ),
         366,
         365,
     )
 
+
     # Add fractional time of year
-    df[prefix + "fracyear"] = (
-        (df[prefix + "dayofyear"] - 1) + df[prefix + "fracday"]
+    df[f"{prefix}fracyear"] = (
+        df[f"{prefix}dayofyear"] - 1 + df[f"{prefix}fracday"]
     ) / days_in_year
 
+
     if cyc_encode:
-        df = pd.concat([df, cyclical_encoding(df[prefix + "hour"], 24)], axis=1)
-        df = pd.concat([df, cyclical_encoding(df[prefix + "dayofweek"], 6)], axis=1)
-        df = pd.concat([df, cyclical_encoding(df[prefix + "day"], 31)], axis=1)
-        df = pd.concat([df, cyclical_encoding(df[prefix + "month"], 12)], axis=1)
+        df = pd.concat([df, cyclical_encoding(df[f"{prefix}hour"], 24)], axis=1)
+        df = pd.concat([df, cyclical_encoding(df[f"{prefix}dayofweek"], 6)], axis=1)
+        df = pd.concat([df, cyclical_encoding(df[f"{prefix}day"], 31)], axis=1)
+        df = pd.concat([df, cyclical_encoding(df[f"{prefix}month"], 12)], axis=1)
         df = pd.concat(
             [df] + [cyclical_encoding(df[c], 1) for c in df if "frac" in c], axis=1
         )

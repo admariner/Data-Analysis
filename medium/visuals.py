@@ -24,9 +24,11 @@ def make_hist(df, x, category=None):
     :return figure: a plotly histogram to show with iplot or plot
     """
     if category is not None:
-        data = []
-        for name, group in df.groupby(category):
-            data.append(go.Histogram(dict(x=group[x], name=name)))
+        data = [
+            go.Histogram(dict(x=group[x], name=name))
+            for name, group in df.groupby(category)
+        ]
+
     else:
         data = [go.Histogram(dict(x=df[x]))]
 
@@ -38,8 +40,7 @@ def make_hist(df, x, category=None):
         else f"{x.replace('_', ' ').title()} Distribution",
     )
 
-    figure = go.Figure(data=data, layout=layout)
-    return figure
+    return go.Figure(data=data, layout=layout)
 
 
 def make_cum_plot(df, y, category=None, ranges=False):
@@ -140,23 +141,21 @@ def make_cum_plot(df, y, category=None, ranges=False):
     # Add a rangeselector and rangeslider for a data xaxis
     if ranges:
         rangeselector = dict(
-            buttons=list(
-                [
-                    dict(count=1, label="1m", step="month", stepmode="backward"),
-                    dict(count=6, label="6m", step="month", stepmode="backward"),
-                    dict(count=1, label="1y", step="year", stepmode="backward"),
-                    dict(step="all"),
-                ]
-            )
+            buttons=[
+                dict(count=1, label="1m", step="month", stepmode="backward"),
+                dict(count=6, label="6m", step="month", stepmode="backward"),
+                dict(count=1, label="1y", step="year", stepmode="backward"),
+                dict(step="all"),
+            ]
         )
+
         rangeslider = dict(visible=True)
         layout["xaxis"]["rangeselector"] = rangeselector
         layout["xaxis"]["rangeslider"] = rangeslider
         layout["width"] = 1000
         layout["height"] = 600
 
-    figure = go.Figure(data=data, layout=layout)
-    return figure
+    return go.Figure(data=data, layout=layout)
 
 
 def make_scatter_plot(
@@ -193,72 +192,70 @@ def make_scatter_plot(
     """
     if category is not None:
         title = f"{y.replace('_', ' ').title()} vs {x.replace('_', ' ').title()} by {category.replace('_', ' ').title()}"
-        data = []
-        for i, (name, group) in enumerate(df.groupby(category)):
-            data.append(
+        data = [
+            go.Scatter(
+                x=group[x],
+                y=group[y],
+                mode="markers",
+                text=group["title"],
+                name=name,
+                marker=dict(size=8, symbol=i + 2),
+            )
+            for i, (name, group) in enumerate(df.groupby(category))
+        ]
+
+    elif scale is None:
+
+        df.sort_values(x, inplace=True)
+        title = f"{y.replace('_', ' ').title()} vs {x.replace('_', ' ').title()}"
+        data = [
+            go.Scatter(
+                x=df[x],
+                y=df[y],
+                mode="markers",
+                text=df["title"],
+                marker=dict(
+                    size=12, color="blue", opacity=0.8, line=dict(color="black")
+                ),
+                name="observations",
+            )
+        ]
+        if fits is not None:
+            data.extend(
                 go.Scatter(
-                    x=group[x],
-                    y=group[y],
-                    mode="markers",
-                    text=group["title"],
-                    name=name,
-                    marker=dict(size=8, symbol=i + 2),
+                    x=df[x],
+                    y=df[fit],
+                    text=df["title"],
+                    mode="lines+markers",
+                    marker=dict(size=8, opacity=0.6),
+                    line=dict(dash="dash"),
+                    name=fit,
                 )
+                for fit in fits
             )
 
+            title += " with Fit"
     else:
-        if scale is not None:
-            title = f"{y.replace('_', ' ').title()} vs {x.replace('_', ' ').title()} Scaled by {scale.title()}"
-            data = [
-                go.Scatter(
-                    x=df[x],
-                    y=df[y],
-                    mode="markers",
-                    text=df["title"],
-                    marker=dict(
-                        size=df[scale],
-                        line=dict(color="black", width=0.5),
-                        sizemode="area",
-                        sizeref=sizeref,
-                        opacity=0.8,
-                        colorscale="Viridis",
-                        color=df[scale],
-                        showscale=True,
-                        sizemin=2,
-                    ),
-                )
-            ]
-        else:
-
-            df.sort_values(x, inplace=True)
-            title = f"{y.replace('_', ' ').title()} vs {x.replace('_', ' ').title()}"
-            data = [
-                go.Scatter(
-                    x=df[x],
-                    y=df[y],
-                    mode="markers",
-                    text=df["title"],
-                    marker=dict(
-                        size=12, color="blue", opacity=0.8, line=dict(color="black")
-                    ),
-                    name="observations",
-                )
-            ]
-            if fits is not None:
-                for fit in fits:
-                    data.append(
-                        go.Scatter(
-                            x=df[x],
-                            y=df[fit],
-                            text=df["title"],
-                            mode="lines+markers",
-                            marker=dict(size=8, opacity=0.6),
-                            line=dict(dash="dash"),
-                            name=fit,
-                        )
-                    )
-
-                title += " with Fit"
+        title = f"{y.replace('_', ' ').title()} vs {x.replace('_', ' ').title()} Scaled by {scale.title()}"
+        data = [
+            go.Scatter(
+                x=df[x],
+                y=df[y],
+                mode="markers",
+                text=df["title"],
+                marker=dict(
+                    size=df[scale],
+                    line=dict(color="black", width=0.5),
+                    sizemode="area",
+                    sizeref=sizeref,
+                    opacity=0.8,
+                    colorscale="Viridis",
+                    color=df[scale],
+                    showscale=True,
+                    sizemin=2,
+                ),
+            )
+        ]
     layout = go.Layout(
         annotations=annotations,
         xaxis=dict(
@@ -276,23 +273,21 @@ def make_scatter_plot(
     # Add a rangeselector and rangeslider for a data xaxis
     if ranges:
         rangeselector = dict(
-            buttons=list(
-                [
-                    dict(count=1, label="1m", step="month", stepmode="backward"),
-                    dict(count=6, label="6m", step="month", stepmode="backward"),
-                    dict(count=1, label="1y", step="year", stepmode="backward"),
-                    dict(step="all"),
-                ]
-            )
+            buttons=[
+                dict(count=1, label="1m", step="month", stepmode="backward"),
+                dict(count=6, label="6m", step="month", stepmode="backward"),
+                dict(count=1, label="1y", step="year", stepmode="backward"),
+                dict(step="all"),
+            ]
         )
+
         rangeslider = dict(visible=True)
         layout["xaxis"]["rangeselector"] = rangeselector
         layout["xaxis"]["rangeslider"] = rangeslider
         layout["width"] = 1000
         layout["height"] = 600
 
-    figure = go.Figure(data=data, layout=layout)
-    return figure
+    return go.Figure(data=data, layout=layout)
 
 
 def make_linear_regression(df, x, y, intercept_0):
@@ -356,9 +351,7 @@ def make_linear_regression(df, x, y, intercept_0):
             lin_reg = stats.linregress(df[x], df[y])
             intercept, slope = lin_reg.intercept, lin_reg.slope
             params = ["pvalue", "rvalue", "slope", "intercept"]
-            values = []
-            for p in params:
-                values.append(getattr(lin_reg, p))
+            values = [getattr(lin_reg, p) for p in params]
             summary = pd.DataFrame({"param": params, "value": values})
             df["fit_values"] = df[x] * slope + intercept
             equation = f"${y.replace('_', ' ')} = {slope:.2f} * {x.replace('_', ' ')} + {intercept:.2f}$"
