@@ -15,33 +15,35 @@ if __name__ == "__main__":
         update_image()
     
     def update_image():
-    
+
         global dims, raster_data
-    
+
         dims_data = dims.data
-    
+
         if not dims_data['width'] or not dims_data['height']:
             return
-    
+
         xmin = max(dims_data['xmin'][0], raster_data.bounds.left)
         ymin = max(dims_data['ymin'][0], raster_data.bounds.bottom)
         xmax = min(dims_data['xmax'][0], raster_data.bounds.right)
         ymax = min(dims_data['ymax'][0], raster_data.bounds.top)
-    
+
         canvas = ds.Canvas(plot_width=dims_data['width'][0],
                            plot_height=dims_data['height'][0],
                            x_range=(xmin, xmax),
                            y_range=(ymin, ymax))
-    
+
         agg = canvas.raster(raster_data)
         img = tf.shade(agg, cmap=Hot, how='linear')
-    
-        new_data = {}
-        new_data['image'] = [img.data]
-        new_data['x'] = [xmin]
-        new_data['y'] = [ymin]
-        new_data['dh'] = [ymax - ymin]
-        new_data['dw'] = [xmax - xmin]
+
+        new_data = {
+            'image': [img.data],
+            'x': [xmin],
+            'y': [ymin],
+            'dh': [ymax - ymin],
+            'dw': [xmax - xmin],
+        }
+
         image_source.stream(new_data, 1)
     
     # load nyc taxi data

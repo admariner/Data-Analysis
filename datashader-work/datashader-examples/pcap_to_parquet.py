@@ -49,19 +49,16 @@ def to_parquet(filename, prefix="maccdc2012"):
             if protocol not in ("tcp", "udp", "eigrp", "icmp"):
                 continue
             try:
-                addresses = []
-
                 # Extract source IP address and convert to integer
                 m = re.match(r'(?P<address>\d+\.\d+\.\d+\.\d+)', fields[2])
                 if not m:
                     continue
-                addresses.append(ip_to_integer(m.group('address')))
-
+                addresses = [ip_to_integer(m['address'])]
                 # Extract target IP address and convert to integer
                 m = re.match(r'(?P<address>\d+\.\d+\.\d+\.\d+)', fields[4])
                 if not m:
                     continue
-                addresses.append(ip_to_integer(m.group('address')))
+                addresses.append(ip_to_integer(m['address']))
 
                 nodes = nodes.union(addresses)
                 src, dst = sorted(addresses)
@@ -93,8 +90,8 @@ def to_parquet(filename, prefix="maccdc2012"):
         edges_df['weight'] = pd.to_numeric(edges_df['weight'])
         edges_df['protocol'] = edges_df['protocol'].astype('category')
 
-        fp.write('{}_nodes.parq'.format(prefix), nodes_df)
-        fp.write('{}_edges.parq'.format(prefix), edges_df)
+        fp.write(f'{prefix}_nodes.parq', nodes_df)
+        fp.write(f'{prefix}_edges.parq', edges_df)
 
 if __name__ == '__main__':
     if len(sys.argv) > 2:

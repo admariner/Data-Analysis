@@ -92,8 +92,7 @@ class Weighter:
         user_goals = {"Craig": 215.0, "Fletcher": 200.0, "Will": 155.0}
         user_colors = {"Craig": "forestgreen", "Fletcher": "navy", "Will": "darkred"}
 
-        for i, user in enumerate(self.users):
-
+        for user in self.users:
             user_weights = self.weights[self.weights["Name"] == user]
             goal = user_goals.get(user)
 
@@ -223,55 +222,50 @@ class Weighter:
                 if type(entry) == float:
                     self.basic_message(user)
 
-                # If the message is a string hand off to the appropriate function
+                elif len(self.weights[self.weights["Name"] == user]) < 8:
+                    message = (
+                        "\nAt least 8 days of data required for detailed analysis."
+                    )
+                    self.slack.chat.post_message(
+                        channel="#weight_tracker",
+                        text=message,
+                        username="Data Analyst",
+                        icon_emoji=":calendar:",
+                    )
+
+                elif entry.lower() == "summary":
+                    self.summary(user)
+
+                elif entry.lower() == "percent":
+                    self.percentage_plot()
+
+                elif entry.lower() == "history":
+                    self.history_plot(user)
+
+                elif entry.lower() == "future":
+                    self.future_plot(user)
+
+                elif entry.lower() == "analysis":
+                    self.analyze(user)
+
                 else:
+                    message = (
+                        "\nPlease enter a valid message:\n\n"
+                        "Your weight\n"
+                        "'Summary' to see a personal summary\n"
+                        "'Percent' to see a plot of all users percentage changes\n"
+                        "'History' to see a plot of your personal history\n"
+                        "'Future' to see your predictions for the next thirty days\n"
+                        "'Analysis' to view personalized advice\n"
+                        "For more help, contact @koehrsen_will on Twitter.\n"
+                    )
 
-                    # Require at lesat 8 days of data
-                    if len(self.weights[self.weights["Name"] == user]) < 8:
-                        message = (
-                            "\nAt least 8 days of data required for detailed analysis."
-                        )
-                        self.slack.chat.post_message(
-                            channel="#weight_tracker",
-                            text=message,
-                            username="Data Analyst",
-                            icon_emoji=":calendar:",
-                        )
-
-                    elif entry.lower() == "summary":
-                        self.summary(user)
-
-                    elif entry.lower() == "percent":
-                        self.percentage_plot()
-
-                    elif entry.lower() == "history":
-                        self.history_plot(user)
-
-                    elif entry.lower() == "future":
-                        self.future_plot(user)
-
-                    elif entry.lower() == "analysis":
-                        self.analyze(user)
-
-                    # Display a help message if the string is not valid
-                    else:
-                        message = (
-                            "\nPlease enter a valid message:\n\n"
-                            "Your weight\n"
-                            "'Summary' to see a personal summary\n"
-                            "'Percent' to see a plot of all users percentage changes\n"
-                            "'History' to see a plot of your personal history\n"
-                            "'Future' to see your predictions for the next thirty days\n"
-                            "'Analysis' to view personalized advice\n"
-                            "For more help, contact @koehrsen_will on Twitter.\n"
-                        )
-
-                        self.slack.chat.post_message(
-                            channel="#weight_tracker",
-                            text=message,
-                            username="Help",
-                            icon_emoji=":interrobang:",
-                        )
+                    self.slack.chat.post_message(
+                        channel="#weight_tracker",
+                        text=message,
+                        username="Help",
+                        icon_emoji=":interrobang:",
+                    )
 
     """ 
     Adds the change and percentage change columns to the self.weights df
@@ -378,8 +372,7 @@ class Weighter:
         plt.style.use("fivethirtyeight")
         plt.figure(figsize=(10, 8))
 
-        for i, user in enumerate(self.users):
-
+        for user in self.users:
             user_color = self.user_dict[user]["color"]
 
             # Select the user and order dataframe by date
@@ -404,16 +397,18 @@ class Weighter:
                 df["pct_change"],
                 "o",
                 color=user_color,
-                label="%s Observations" % user,
+                label=f"{user} Observations",
             )
+
             plt.plot(
                 df.index,
                 fit_data,
                 "-",
                 color=user_color,
                 linewidth=5,
-                label="%s Smooth Fit" % user,
+                label=f"{user} Smooth Fit",
             )
+
 
         # Plot formatting
         plt.xlabel("Date")
@@ -469,7 +464,7 @@ class Weighter:
         )
         plt.xlabel("Date")
         plt.ylabel("Weight (lbs)")
-        plt.title("%s Weight History" % user)
+        plt.title(f"{user} Weight History")
         plt.legend(prop={"size": 14})
 
         plt.savefig(
@@ -478,8 +473,9 @@ class Weighter:
         self.slack.files.upload(
             "C:\\Users\\Will Koehrsen\\Documents\\Data-Analysis\\weighter\\images\\history_plot.png",
             channels="#weight_tracker",
-            title="%s History" % user,
+            title=f"{user} History",
         )
+
 
         # Remove the plot from local storage
         os.remove(
@@ -492,8 +488,7 @@ class Weighter:
     """
 
     def prophet_model(self):
-        model = fbprophet.Prophet(daily_seasonality=False, yearly_seasonality=False)
-        return model
+        return fbprophet.Prophet(daily_seasonality=False, yearly_seasonality=False)
 
     """ 
     Plot the prophet forecast for the next thirty days
@@ -548,7 +543,7 @@ class Weighter:
         )
         plt.xlabel("Date")
         plt.ylabel("Weight (lbs)")
-        plt.title("%s 30 Day Prediction" % user)
+        plt.title(f"{user} 30 Day Prediction")
         plt.legend()
         plt.savefig(
             "C:\\Users\\Will Koehrsen\\Documents\\Data-Analysis\\weighter\\images\\future_plot.png"
@@ -557,8 +552,9 @@ class Weighter:
         self.slack.files.upload(
             "C:\\Users\\Will Koehrsen\\Documents\\Data-Analysis\\weighter\\images\\future_plot.png",
             channels="#weight_tracker",
-            title="%s Future Predictions" % user,
+            title=f"{user} Future Predictions",
         )
+
 
         os.remove(
             "C:\\Users\\Will Koehrsen\\Documents\\Data-Analysis\\weighter\\images\\future_plot.png"
@@ -667,7 +663,7 @@ class Weighter:
         plt.legend(handles=[red_patch, green_patch])
         plt.xlabel("Day of Week")
         plt.ylabel("Trend (lbs)")
-        plt.title("%s Weekly Trends" % user)
+        plt.title(f"{user} Weekly Trends")
         plt.savefig(
             "C:\\Users\\Will Koehrsen\\Documents\\Data-Analysis\\weighter\\images\\weekly_plot.png"
         )
@@ -676,8 +672,9 @@ class Weighter:
         self.slack.files.upload(
             "C:\\Users\\Will Koehrsen\\Documents\\Data-Analysis\\weighter\\images\\weekly_plot.png",
             channels="#weight_tracker",
-            title="%s Weekly Trends" % user,
+            title=f"{user} Weekly Trends",
         )
+
 
         os.remove(
             "C:\\Users\\Will Koehrsen\\Documents\\Data-Analysis\\weighter\\images\\weekly_plot.png"

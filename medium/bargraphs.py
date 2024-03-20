@@ -65,7 +65,7 @@ def get_all_pages(driver, xpath, months, suffix):
     results = results.loc[
         results[results["views"] != 0.0].index.min() :,
     ]
-    print("First views on ", str(results.index.min().date()))
+    print("First views on ", results.index.min().date())
 
     # Save using the date as the file name
     fname = f"data/{str(datetime.now().date())}_{suffix}"
